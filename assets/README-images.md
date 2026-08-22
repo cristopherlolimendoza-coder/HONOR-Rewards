@@ -1,0 +1,1 @@
+Las imágenes del marketplace se mantienen localmente en este repositorio para evitar dependencias externas.
