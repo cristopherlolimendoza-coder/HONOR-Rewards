@@ -17,7 +17,7 @@
           return (await r.text()).replace(/\s+/g,'');
         }));
         const b64=parts.join('');
-        if(b64) data[name]='data:image/webp;base64,'+b64;
+        if(b64) data[name]='data:image/png;base64,'+b64;
       }catch(e){console.warn('Imagen no cargada:',name,e);}
     }));
     apply();
