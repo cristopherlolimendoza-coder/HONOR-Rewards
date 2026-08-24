@@ -1,11 +1,13 @@
 (()=>{
+  const directSources={
+    'Stanley Aerolight':'/assets/stanley-aerolight-exact-v15.webp?v=16'
+  };
   const b64Sources={
-    'Stanley Aerolight':'/assets/stanley-aerolight-exact-v15.b64',
     'HONOR Choice Auriculares':'/assets/earbuds-v9.b64',
     'HONOR Choice Air Fryer':'/assets/airfryer-v9.b64',
     'Aspiradora Robot HONOR Choice R3':'/assets/honor-choice-robot-r3.b64'
   };
-  const data={};
+  const data={...directSources};
   let applying=false;
 
   function applyOne(name,src){
@@ -52,6 +54,7 @@
 
   function start(){
     new MutationObserver(()=>apply()).observe(document.body,{childList:true,subtree:true,characterData:true});
+    apply();
     Object.entries(b64Sources).forEach(([name,url])=>loadB64(name,url));
   }
 
