@@ -1,5 +1,6 @@
 (()=>{
   const fixes={
+    'Stanley Aerolight':'/assets/stanley-aerolight-v11.b64',
     'HONOR Choice Auriculares':'/assets/earbuds-v9.b64',
     'HONOR Choice Air Fryer':'/assets/airfryer-v9.b64',
     'Aspiradora Robot HONOR Choice R3':'/assets/honor-choice-robot-r3.b64'
@@ -38,6 +39,8 @@
         modalImg.src=data[modalName];
         modalImg.removeAttribute('srcset');
         modalImg.style.objectFit='contain';
+        modalImg.style.maxWidth='100%';
+        modalImg.style.maxHeight='100%';
       }
     }finally{applying=false;}
   }
