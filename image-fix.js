@@ -1,13 +1,11 @@
 (()=>{
-  const directSources={
-    'Stanley Aerolight':'https://www.stanley1913.com/cdn/shop/files/Web_PNG_Square-TheIceFlowAerolightBottleFlipStraw2.024OZ-Frost-Front.png?v=1711663270&width=1515'
-  };
   const b64Sources={
+    'Stanley Aerolight':'/assets/stanley-aerolight-v11.b64',
     'HONOR Choice Auriculares':'/assets/earbuds-v9.b64',
     'HONOR Choice Air Fryer':'/assets/airfryer-v9.b64',
     'Aspiradora Robot HONOR Choice R3':'/assets/honor-choice-robot-r3.b64'
   };
-  const data={...directSources};
+  const data={};
   let applying=false;
 
   function applyOne(name,src){
@@ -34,7 +32,7 @@
   }
 
   function apply(){
-    if(applying) return;
+    if(applying)return;
     applying=true;
     try{Object.entries(data).forEach(([name,src])=>applyOne(name,src));}
     finally{applying=false;}
@@ -43,9 +41,9 @@
   async function loadB64(name,url){
     try{
       const r=await fetch(url,{cache:'no-store'});
-      if(!r.ok) throw new Error(`${r.status}`);
+      if(!r.ok)throw new Error(`${r.status}`);
       const b64=(await r.text()).replace(/\s+/g,'');
-      if(!b64.startsWith('UklG')) throw new Error('archivo WebP inválido');
+      if(!b64.startsWith('UklG'))throw new Error('archivo WebP inválido');
       const src=`data:image/webp;base64,${b64}`;
       data[name]=src;
       applyOne(name,src);
@@ -54,10 +52,9 @@
 
   function start(){
     new MutationObserver(()=>apply()).observe(document.body,{childList:true,subtree:true,characterData:true});
-    apply();
     Object.entries(b64Sources).forEach(([name,url])=>loadB64(name,url));
   }
 
-  if(document.body) start(); else document.addEventListener('DOMContentLoaded',start,{once:true});
+  if(document.body)start();else document.addEventListener('DOMContentLoaded',start,{once:true});
   document.addEventListener('click',()=>setTimeout(apply,0),true);
 })();
