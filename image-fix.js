@@ -1,11 +1,13 @@
 (()=>{
-  const fixes={
-    'Stanley Aerolight':'/assets/stanley-aerolight.b64',
+  const directSources={
+    'Stanley Aerolight':'https://www.stanley1913.com/cdn/shop/files/Web_PNG_Square-TheIceFlowAerolightBottleFlipStraw2.024OZ-Frost-Front.png?v=1711663270&width=1515'
+  };
+  const b64Sources={
     'HONOR Choice Auriculares':'/assets/earbuds-v9.b64',
     'HONOR Choice Air Fryer':'/assets/airfryer-v9.b64',
     'Aspiradora Robot HONOR Choice R3':'/assets/honor-choice-robot-r3.b64'
   };
-  const data={};
+  const data={...directSources};
   let applying=false;
 
   function applyOne(name,src){
@@ -34,12 +36,11 @@
   function apply(){
     if(applying) return;
     applying=true;
-    try{
-      Object.entries(data).forEach(([name,src])=>applyOne(name,src));
-    }finally{applying=false;}
+    try{Object.entries(data).forEach(([name,src])=>applyOne(name,src));}
+    finally{applying=false;}
   }
 
-  async function loadOne(name,url){
+  async function loadB64(name,url){
     try{
       const r=await fetch(url,{cache:'no-store'});
       if(!r.ok) throw new Error(`${r.status}`);
@@ -48,15 +49,13 @@
       const src=`data:image/webp;base64,${b64}`;
       data[name]=src;
       applyOne(name,src);
-    }catch(e){
-      console.error(`No se pudo cargar ${name}`,e);
-    }
+    }catch(e){console.error(`No se pudo cargar ${name}`,e);}
   }
 
   function start(){
     new MutationObserver(()=>apply()).observe(document.body,{childList:true,subtree:true,characterData:true});
-    Object.entries(fixes).forEach(([name,url])=>loadOne(name,url));
     apply();
+    Object.entries(b64Sources).forEach(([name,url])=>loadB64(name,url));
   }
 
   if(document.body) start(); else document.addEventListener('DOMContentLoaded',start,{once:true});
