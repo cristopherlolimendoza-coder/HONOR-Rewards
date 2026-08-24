@@ -1,7 +1,8 @@
 (()=>{
   const fixes={
     'HONOR Choice Auriculares':'/assets/earbuds-v9.b64',
-    'HONOR Choice Air Fryer':'/assets/airfryer-v9.b64'
+    'HONOR Choice Air Fryer':'/assets/airfryer-v9.b64',
+    'Aspiradora Robot HONOR Choice R3':'/assets/honor-choice-robot-r3.b64'
   };
   const data={};
   let applying=false;
