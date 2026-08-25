@@ -39,3 +39,5 @@ No guardar contraseñas dentro del repositorio.
 - Aspiradora Robot HONOR Choice R3: cuota 50, stock 3.
 
 Capacidad mínima total de la dinámica con todo el stock canjeado: **750 unidades vendidas**.
+
+Última activación de producción: 2026-08-25.
