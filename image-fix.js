@@ -1,7 +1,7 @@
 (()=>{
   const directSources={};
   const b64Sources={
-    'Stanley Aerolight':'/assets/stanley-aerolight-black-v22.b64',
+    'Stanley Aerolight':'/assets/stanley-aerolight-black-v23.b64',
     'HONOR Choice Auriculares':'/assets/earbuds-v9.b64',
     'HONOR Choice Air Fryer':'/assets/airfryer-v9.b64',
     'Aspiradora Robot HONOR Choice R3':'/assets/honor-choice-robot-r3.b64'
