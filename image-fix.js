@@ -1,6 +1,6 @@
 (()=>{
   const directSources={
-    'Stanley Aerolight':'https://raw.githubusercontent.com/cristopherlolimendoza-coder/HONOR-Rewards/5b4984d4aa17b5c820f859ee37664646365db55b/assets/stanley-aerolight-hires.webp'
+    'Stanley Aerolight':'/assets/stanley-aerolight-black.webp?v=20'
   };
   const b64Sources={
     'HONOR Choice Auriculares':'/assets/earbuds-v9.b64',
