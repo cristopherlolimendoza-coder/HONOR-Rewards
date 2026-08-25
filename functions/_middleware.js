@@ -3,6 +3,6 @@ export async function onRequest(context){
   const type=response.headers.get('content-type')||'';
   if(!type.includes('text/html')) return response;
   return new HTMLRewriter()
-    .on('body',{element(el){el.append('<script src="/image-fix.js?v=22"></script>',{html:true});}})
+    .on('body',{element(el){el.append('<script src="/image-fix.js?v=23"></script>',{html:true});}})
     .transform(response);
 }
