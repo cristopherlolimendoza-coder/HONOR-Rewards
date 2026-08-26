@@ -1,1 +1,88 @@
-<!doctype html><html lang="es" translate="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="google" content="notranslate"><title>HONOR Rewards · Admin</title><style>:root{--b:#0057ff;--p:#633cff;--m:#ea38a8;--n:#101828;--bg:#f4f6fb;--line:#e5e7eb;--muted:#667085;--ok:#067647;--bad:#b42318}*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:#17212b}button,input,select{font:inherit}.wrap{max-width:1320px;margin:auto;padding:0 18px}header{background:var(--n);color:#fff;padding:16px 0}.brand{font-size:22px;font-weight:900}.sub{color:#cbd5e1;font-size:13px;margin-top:4px}main{padding:22px 0 36px}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 8px 24px #1018280e}.login{max-width:430px;margin:60px auto}.login h1{margin-top:0}.field{display:grid;gap:6px;font-size:13px;font-weight:800;color:#475467}.field input,.field select,.control{padding:11px;border:1px solid #d0d5dd;border-radius:11px;background:#fff}.btn{border:1px solid var(--line);background:#fff;padding:10px 12px;border-radius:11px;font-weight:900;cursor:pointer}.btn:disabled{opacity:.6;cursor:not-allowed}.primary{border:0;color:#fff;background:linear-gradient(135deg,var(--b),var(--p),var(--m))}.danger{color:var(--bad);border-color:#f1b8b3}.success{color:var(--ok);border-color:#aee7c7}.error{color:var(--bad);font-size:13px;font-weight:800;margin-top:10px;min-height:18px}.hidden{display:none!important}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:16px}.kpi{background:#fff;border:1px solid var(--line);border-radius:17px;padding:14px}.kpi small{display:block;color:var(--muted)}.kpi b{font-size:27px;display:block;margin-top:3px}.block{margin-top:16px}.head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.head h2{margin:0;font-size:20px}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters .control{min-width:180px}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1240px;font-size:13px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{background:#f8fbff;color:#344054;position:sticky;top:0}.state{display:inline-block;padding:6px 8px;border-radius:999px;font-size:12px;font-weight:900}.review{background:#fff6e8;color:#8a5100}.approved{background:#ecfdf3;color:var(--ok)}.rejected{background:#fef3f2;color:var(--bad)}.delivered{background:#eef4ff;color:#2855cb}.inventory{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.inv{border:1px solid var(--line);border-radius:16px;padding:13px;background:#fbfcff}.inv h3{margin:0 0 8px}.invgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.note{background:#eef4ff;border:1px solid #dbe6ff;border-radius:14px;padding:12px;color:#344054;font-size:13px;margin-top:12px}.sync{font-size:12px;color:var(--muted);margin-top:5px}@media(max-width:1000px){.kpis{grid-template-columns:repeat(2,1fr)}.inventory{grid-template-columns:1fr}}@media(max-width:600px){.kpis,.invgrid{grid-template-columns:1fr}.filters{width:100%}.filters .control{width:100%;min-width:0}}</style></head><body><header><div class="wrap"><div class="brand">HONOR Rewards · Administración</div><div class="sub">Acceso exclusivo para validadores</div></div></header><main class="wrap"><section id="loginView" class="card login"><h1>Ingresar</h1><p style="color:var(--muted)">Panel privado de revisión de canjes.</p><label class="field">Contraseña<input id="password" type="password" autocomplete="current-password"></label><button id="loginBtn" class="btn primary" style="width:100%;margin-top:12px">Ingresar</button><div id="loginError" class="error"></div></section><section id="adminView" class="hidden"><div class="top"><div><h1 style="margin:0">Panel de validación</h1><div style="color:var(--muted);margin-top:4px">Solicitudes, stock y cuotas</div><div id="lastSync" class="sync"></div></div><div><button id="refreshBtn" class="btn">Actualizar</button> <button id="exportBtn" class="btn">Exportar CSV</button> <button id="logoutBtn" class="btn danger">Salir</button></div></div><div class="kpis"><div class="kpi"><small>Solicitudes</small><b id="kTotal">0</b></div><div class="kpi"><small>Unidades reportadas</small><b id="kUnits">0</b></div><div class="kpi"><small>En revisión</small><b id="kReview">0</b></div><div class="kpi"><small>Aprobadas</small><b id="kApproved">0</b></div><div class="kpi"><small>Entregadas</small><b id="kDelivered">0</b></div><div class="kpi"><small>Rechazadas</small><b id="kRejected">0</b></div></div><div class="card block"><div class="head"><h2>Solicitudes de canje</h2><div class="filters"><input id="search" class="control" placeholder="Buscar ejecutivo, cliente, RUC…"><select id="statusFilter" class="control"><option value="Todos">Todos los estados</option><option>En revisión</option><option>Aprobado</option><option>Entregado</option><option>Rechazado</option></select></div></div><div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Ejecutivo</th><th>Canal</th><th>Premio</th><th>Uds.</th><th>Clientes / modelos</th><th>Comentario FFVV</th><th>Estado</th><th>Observación admin</th><th>Acciones</th></tr></thead><tbody id="rows"></tbody></table></div></div><div class="card block"><div class="head"><h2>Inventario y cuotas</h2></div><div id="inventory" class="inventory"></div><div class="note">Al ingresar una solicitud, una unidad del premio pasa de disponible a reservado. Si rechazas el canje, vuelve automáticamente a disponible. Cuando marcas el premio como entregado, deja de figurar como reservado y pasa a entregado.</div></div></section></main><script src="admin.js?v=3"></script></body></html>
+<!doctype html>
+<html lang="es" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="google" content="notranslate">
+<title>HONOR Rewards · Admin</title>
+<style>
+:root{--b:#0057ff;--p:#633cff;--m:#ea38a8;--n:#101828;--bg:#f4f6fb;--line:#e5e7eb;--muted:#667085;--ok:#067647;--bad:#b42318;--amber:#b54708}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:#17212b}button,input,select{font:inherit}.wrap{max-width:1500px;margin:auto;padding:0 18px}header{background:var(--n);color:#fff;padding:16px 0}.brand{font-size:22px;font-weight:900}.sub{color:#cbd5e1;font-size:13px;margin-top:4px}main{padding:22px 0 36px}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 8px 24px #1018280e}.login{max-width:430px;margin:60px auto}.login h1{margin-top:0}.field{display:grid;gap:6px;font-size:13px;font-weight:800;color:#475467}.field input,.field select,.control{padding:11px;border:1px solid #d0d5dd;border-radius:11px;background:#fff}.btn{border:1px solid var(--line);background:#fff;padding:10px 12px;border-radius:11px;font-weight:900;cursor:pointer}.btn:disabled{opacity:.55;cursor:not-allowed}.primary{border:0;color:#fff;background:linear-gradient(135deg,var(--b),var(--p),var(--m))}.danger{color:var(--bad);border-color:#f1b8b3}.success{color:var(--ok);border-color:#aee7c7}.delete{color:#fff;background:var(--bad);border-color:var(--bad)}.error{color:var(--bad);font-size:13px;font-weight:800;margin-top:10px;min-height:18px}.hidden{display:none!important}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.topActions{display:flex;gap:8px;flex-wrap:wrap}.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:16px}.kpi{background:#fff;border:1px solid var(--line);border-radius:17px;padding:14px}.kpi small{display:block;color:var(--muted)}.kpi b{font-size:27px;display:block;margin-top:3px}.block{margin-top:16px}.head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.head h2{margin:0;font-size:20px}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters .control{min-width:180px}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:14px}table{width:100%;border-collapse:collapse;min-width:1450px;font-size:13px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{background:#f8fbff;color:#344054;position:sticky;top:0;z-index:1}.state{display:inline-block;padding:6px 8px;border-radius:999px;font-size:12px;font-weight:900}.review{background:#fff6e8;color:#8a5100}.approved{background:#ecfdf3;color:var(--ok)}.rejected{background:#fef3f2;color:var(--bad)}.delivered{background:#eef4ff;color:#2855cb}.inventory{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.inv{border:1px solid var(--line);border-radius:16px;padding:13px;background:#fbfcff}.inv h3{margin:0 0 8px}.invgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.invstats{font-size:13px;color:#475467;margin-bottom:9px}.note{background:#eef4ff;border:1px solid #dbe6ff;border-radius:14px;padding:12px;color:#344054;font-size:13px;margin-top:12px}.sync{font-size:12px;color:var(--muted);margin-top:5px}.muted{color:var(--muted)}.sep{border:0;border-top:1px solid #eee}.empty{text-align:center;color:#667085;padding:30px!important}.actionsCell{min-width:245px}.bottomActions{display:flex;justify-content:flex-end;margin-top:14px}.cycle{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:14px;padding:11px 13px;margin-top:12px;font-size:13px;font-weight:700}
+@media(max-width:1000px){.kpis{grid-template-columns:repeat(2,1fr)}.inventory{grid-template-columns:1fr}}@media(max-width:600px){.kpis,.invgrid{grid-template-columns:1fr}.filters{width:100%}.filters .control{width:100%;min-width:0}.topActions{width:100%}.topActions .btn{flex:1}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="brand">HONOR Rewards · Administración</div><div class="sub">Base de datos comercial y validación de canjes</div></div></header>
+<main class="wrap">
+<section id="loginView" class="card login">
+  <h1>Ingresar</h1>
+  <p style="color:var(--muted)">Acceso exclusivo para administradores y validadores.</p>
+  <label class="field">Contraseña<input id="password" type="password" autocomplete="current-password"></label>
+  <button id="loginBtn" class="btn primary" style="width:100%;margin-top:12px">Ingresar</button>
+  <div id="loginError" class="error"></div>
+</section>
+
+<section id="adminView" class="hidden">
+  <div class="top">
+    <div>
+      <h1 style="margin:0">Panel de ventas y canjes</h1>
+      <div style="color:var(--muted);margin-top:4px">Histórico comercial, validación, inventario y descarga</div>
+      <div id="lastSync" class="sync"></div>
+    </div>
+    <div class="topActions">
+      <button id="refreshBtn" class="btn">Actualizar</button>
+      <button id="exportBtn" class="btn primary">Descargar Excel</button>
+      <button id="resetBtn" class="btn">Restablecer stock del mes</button>
+      <button id="logoutBtn" class="btn danger">Salir</button>
+    </div>
+  </div>
+
+  <div id="cycleInfo" class="cycle"></div>
+
+  <div class="kpis">
+    <div class="kpi"><small>Solicitudes</small><b id="kTotal">0</b></div>
+    <div class="kpi"><small>Unidades reportadas</small><b id="kUnits">0</b></div>
+    <div class="kpi"><small>En revisión</small><b id="kReview">0</b></div>
+    <div class="kpi"><small>Aprobadas</small><b id="kApproved">0</b></div>
+    <div class="kpi"><small>Entregadas</small><b id="kDelivered">0</b></div>
+    <div class="kpi"><small>Rechazadas</small><b id="kRejected">0</b></div>
+  </div>
+
+  <div class="card block">
+    <div class="head">
+      <div><h2>Base de datos de solicitudes</h2><div class="muted" style="font-size:13px;margin-top:3px">Cada canje queda almacenado y puede revisarse por mes.</div></div>
+      <div class="filters">
+        <select id="monthFilter" class="control"><option>Cargando…</option></select>
+        <select id="statusFilter" class="control">
+          <option value="Todos">Todos los estados</option>
+          <option>En revisión</option>
+          <option>Aprobado</option>
+          <option>Entregado</option>
+          <option>Rechazado</option>
+        </select>
+        <input id="search" class="control" placeholder="Buscar ejecutivo, cliente, RUC, modelo…">
+      </div>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>Fecha</th><th>Mes</th><th>Ejecutivo</th><th>Canal</th><th>Premio</th><th>Uds.</th>
+          <th>Cliente / RUC / modelos</th><th>Comentario FFVV</th><th>Estado</th><th>Observación admin</th><th>Acciones</th>
+        </tr></thead>
+        <tbody id="rows"><tr><td colspan="11" class="empty">Cargando información…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="bottomActions"><button id="exportBottomBtn" class="btn primary">Descargar Excel</button></div>
+  </div>
+
+  <div class="card block">
+    <div class="head"><div><h2>Inventario y cuotas del mes</h2><div class="muted" style="font-size:13px;margin-top:3px">Puedes cambiar stock y cuota sin editar código.</div></div></div>
+    <div id="inventory" class="inventory"></div>
+    <div class="note">Al registrar un canje, 1 premio pasa de <b>Disponible</b> a <b>Reservado</b>. Si se rechaza o elimina mientras está pendiente, vuelve a Disponible. Al marcarlo como Entregado, pasa a Entregado. Al iniciar un nuevo mes, el stock se restablece automáticamente y el histórico anterior se conserva.</div>
+  </div>
+</section>
+</main>
+<script src="admin.js?v=launch-1"></script>
+</body>
+</html>
