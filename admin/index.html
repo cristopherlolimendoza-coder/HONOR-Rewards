@@ -21,68 +21,14 @@
   <button id="loginBtn" class="btn primary" style="width:100%;margin-top:12px">Ingresar</button>
   <div id="loginError" class="error"></div>
 </section>
-
 <section id="adminView" class="hidden">
-  <div class="top">
-    <div>
-      <h1 style="margin:0">Panel de ventas y canjes</h1>
-      <div style="color:var(--muted);margin-top:4px">Histórico comercial, validación, inventario y descarga</div>
-      <div id="lastSync" class="sync"></div>
-    </div>
-    <div class="topActions">
-      <button id="refreshBtn" class="btn">Actualizar</button>
-      <button id="exportBtn" class="btn primary">Descargar Excel</button>
-      <button id="resetBtn" class="btn">Restablecer stock del mes</button>
-      <button id="logoutBtn" class="btn danger">Salir</button>
-    </div>
-  </div>
-
+  <div class="top"><div><h1 style="margin:0">Panel de ventas y canjes</h1><div style="color:var(--muted);margin-top:4px">Histórico comercial, validación, inventario y descarga</div><div id="lastSync" class="sync"></div></div><div class="topActions"><button id="refreshBtn" class="btn">Actualizar</button><button id="exportBtn" class="btn primary">Descargar Excel</button><button id="resetBtn" class="btn">Restablecer stock del mes</button><button id="logoutBtn" class="btn danger">Salir</button></div></div>
   <div id="cycleInfo" class="cycle"></div>
-
-  <div class="kpis">
-    <div class="kpi"><small>Solicitudes</small><b id="kTotal">0</b></div>
-    <div class="kpi"><small>Unidades reportadas</small><b id="kUnits">0</b></div>
-    <div class="kpi"><small>En revisión</small><b id="kReview">0</b></div>
-    <div class="kpi"><small>Aprobadas</small><b id="kApproved">0</b></div>
-    <div class="kpi"><small>Entregadas</small><b id="kDelivered">0</b></div>
-    <div class="kpi"><small>Rechazadas</small><b id="kRejected">0</b></div>
-  </div>
-
-  <div class="card block">
-    <div class="head">
-      <div><h2>Base de datos de solicitudes</h2><div class="muted" style="font-size:13px;margin-top:3px">Cada canje queda almacenado y puede revisarse por mes.</div></div>
-      <div class="filters">
-        <select id="monthFilter" class="control"><option>Cargando…</option></select>
-        <select id="statusFilter" class="control">
-          <option value="Todos">Todos los estados</option>
-          <option>En revisión</option>
-          <option>Aprobado</option>
-          <option>Entregado</option>
-          <option>Rechazado</option>
-        </select>
-        <input id="search" class="control" placeholder="Buscar ejecutivo, cliente, RUC, modelo…">
-      </div>
-    </div>
-
-    <div class="tablewrap">
-      <table>
-        <thead><tr>
-          <th>Fecha</th><th>Mes</th><th>Ejecutivo</th><th>Canal</th><th>Premio</th><th>Uds.</th>
-          <th>Cliente / RUC / modelos</th><th>Comentario FFVV</th><th>Estado</th><th>Observación admin</th><th>Acciones</th>
-        </tr></thead>
-        <tbody id="rows"><tr><td colspan="11" class="empty">Cargando información…</td></tr></tbody>
-      </table>
-    </div>
-    <div class="bottomActions"><button id="exportBottomBtn" class="btn primary">Descargar Excel</button></div>
-  </div>
-
-  <div class="card block">
-    <div class="head"><div><h2>Inventario y cuotas del mes</h2><div class="muted" style="font-size:13px;margin-top:3px">Puedes cambiar stock y cuota sin editar código.</div></div></div>
-    <div id="inventory" class="inventory"></div>
-    <div class="note">Al registrar un canje, 1 premio pasa de <b>Disponible</b> a <b>Reservado</b>. Si se rechaza o elimina mientras está pendiente, vuelve a Disponible. Al marcarlo como Entregado, pasa a Entregado. Al iniciar un nuevo mes, el stock se restablece automáticamente y el histórico anterior se conserva.</div>
-  </div>
+  <div class="kpis"><div class="kpi"><small>Solicitudes</small><b id="kTotal">0</b></div><div class="kpi"><small>Unidades reportadas</small><b id="kUnits">0</b></div><div class="kpi"><small>En revisión</small><b id="kReview">0</b></div><div class="kpi"><small>Aprobadas</small><b id="kApproved">0</b></div><div class="kpi"><small>Entregadas</small><b id="kDelivered">0</b></div><div class="kpi"><small>Rechazadas</small><b id="kRejected">0</b></div></div>
+  <div class="card block"><div class="head"><div><h2>Base de datos de solicitudes</h2><div class="muted" style="font-size:13px;margin-top:3px">Cada canje queda almacenado y puede revisarse por mes.</div></div><div class="filters"><select id="monthFilter" class="control"><option>Cargando…</option></select><select id="statusFilter" class="control"><option value="Todos">Todos los estados</option><option>En revisión</option><option>Aprobado</option><option>Entregado</option><option>Rechazado</option></select><input id="search" class="control" placeholder="Buscar ejecutivo, cliente, RUC, modelo…"></div></div><div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Mes</th><th>Ejecutivo</th><th>Canal</th><th>Premio</th><th>Uds.</th><th>Cliente / RUC / modelos</th><th>Comentario FFVV</th><th>Estado</th><th>Observación admin</th><th>Acciones</th></tr></thead><tbody id="rows"><tr><td colspan="11" class="empty">Cargando información…</td></tr></tbody></table></div><div class="bottomActions"><button id="exportBottomBtn" class="btn primary">Descargar Excel</button></div></div>
+  <div class="card block"><div class="head"><div><h2>Inventario y cuotas del mes</h2><div class="muted" style="font-size:13px;margin-top:3px">Puedes modificar el stock mensual y la cuota de cada premio sin editar código.</div></div></div><div id="inventory" class="inventory"></div><div class="note">Al registrar un canje, 1 premio pasa de <b>Disponible</b> a <b>En revisión</b>. Al aprobarlo deja de estar reservado, pero continúa descontado del stock disponible. Si se rechaza, vuelve a Disponible. Al marcarlo como Entregado pasa a Entregado. El botón <b>Restablecer stock del mes</b> reinicia únicamente el stock; no cambia las cuotas ni elimina el histórico.</div></div>
 </section>
 </main>
-<script src="admin.js?v=launch-1"></script>
+<script src="admin.js?v=launch-2"></script>
 </body>
 </html>
