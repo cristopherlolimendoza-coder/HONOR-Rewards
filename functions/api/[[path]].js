@@ -10,48 +10,18 @@ const DEFAULT_PRODUCTS=[
 ];
 const json=(data,status=200,headers={})=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store',...headers}});
 const clean=s=>String(s??'').trim();
-function monthKey(d=new Date()){
-  const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Lima',year:'numeric',month:'2-digit'}).formatToParts(d);
-  const y=parts.find(x=>x.type==='year')?.value,m=parts.find(x=>x.type==='month')?.value;
-  return `${y}-${m}`;
-}
-async function ensureColumn(db,table,column,definition){
-  const q=await db.prepare(`PRAGMA table_info(${table})`).all();
-  if(!(q.results||[]).some(x=>x.name===column))await db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run();
-}
+function monthKey(d=new Date()){const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Lima',year:'numeric',month:'2-digit'}).formatToParts(d);const y=parts.find(x=>x.type==='year')?.value,m=parts.find(x=>x.type==='month')?.value;return `${y}-${m}`}
+async function ensureColumn(db,table,column,definition){const q=await db.prepare(`PRAGMA table_info(${table})`).all();if(!(q.results||[]).some(x=>x.name===column))await db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run()}
 async function initDB(db){
   await db.prepare(`CREATE TABLE IF NOT EXISTS products(id TEXT PRIMARY KEY,name TEXT NOT NULL,tier TEXT NOT NULL,quota INTEGER NOT NULL,total_stock INTEGER NOT NULL,available INTEGER NOT NULL,reserved INTEGER NOT NULL DEFAULT 0,approved INTEGER NOT NULL DEFAULT 0,delivered INTEGER NOT NULL DEFAULT 0,sort_order INTEGER NOT NULL,img TEXT,description TEXT,inventory_month TEXT)`).run();
   await db.prepare(`CREATE TABLE IF NOT EXISTS requests(id TEXT PRIMARY KEY,created_at TEXT NOT NULL,executive TEXT NOT NULL,channel TEXT NOT NULL,product_id TEXT NOT NULL,total_qty INTEGER NOT NULL,comment TEXT,status TEXT NOT NULL,admin_note TEXT DEFAULT '',cycle_month TEXT,affects_stock INTEGER NOT NULL DEFAULT 1,FOREIGN KEY(product_id) REFERENCES products(id))`).run();
   await db.prepare(`CREATE TABLE IF NOT EXISTS request_lines(id INTEGER PRIMARY KEY AUTOINCREMENT,request_id TEXT NOT NULL,ruc TEXT NOT NULL,company TEXT NOT NULL,model TEXT NOT NULL,qty INTEGER NOT NULL,FOREIGN KEY(request_id) REFERENCES requests(id))`).run();
-  await ensureColumn(db,'products','inventory_month','TEXT');
-  await ensureColumn(db,'products','approved','INTEGER NOT NULL DEFAULT 0');
-  await ensureColumn(db,'requests','cycle_month','TEXT');
-  await ensureColumn(db,'requests','affects_stock','INTEGER NOT NULL DEFAULT 1');
-  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_requests_status ON requests(status)`).run();
-  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_requests_cycle ON requests(cycle_month)`).run();
-  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_request_lines_request ON request_lines(request_id)`).run();
-  for(const p of DEFAULT_PRODUCTS){
-    await db.prepare(`INSERT OR IGNORE INTO products(id,name,tier,quota,total_stock,available,reserved,approved,delivered,sort_order,img,description,inventory_month) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(p.id,p.name,p.tier,p.quota,p.stock,p.stock,0,0,0,p.sort,p.img,p.desc,monthKey()).run();
-    await db.prepare(`UPDATE products SET name=?,tier=?,sort_order=?,img=?,description=? WHERE id=?`).bind(p.name,p.tier,p.sort,p.img,p.desc,p.id).run();
-  }
-  await db.prepare(`UPDATE requests SET cycle_month=substr(created_at,1,7) WHERE cycle_month IS NULL OR cycle_month=''`).run();
-  await db.prepare(`UPDATE requests SET affects_stock=1 WHERE affects_stock IS NULL`).run();
-  const mk=monthKey();
-  await db.prepare(`UPDATE products SET inventory_month=? WHERE inventory_month IS NULL OR inventory_month<>?`).bind(mk,mk).run();
+  await ensureColumn(db,'products','inventory_month','TEXT');await ensureColumn(db,'products','approved','INTEGER NOT NULL DEFAULT 0');await ensureColumn(db,'requests','cycle_month','TEXT');await ensureColumn(db,'requests','affects_stock','INTEGER NOT NULL DEFAULT 1');
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_requests_status ON requests(status)`).run();await db.prepare(`CREATE INDEX IF NOT EXISTS idx_requests_cycle ON requests(cycle_month)`).run();await db.prepare(`CREATE INDEX IF NOT EXISTS idx_request_lines_request ON request_lines(request_id)`).run();
+  for(const p of DEFAULT_PRODUCTS){await db.prepare(`INSERT OR IGNORE INTO products(id,name,tier,quota,total_stock,available,reserved,approved,delivered,sort_order,img,description,inventory_month) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(p.id,p.name,p.tier,p.quota,p.stock,p.stock,0,0,0,p.sort,p.img,p.desc,monthKey()).run();await db.prepare(`UPDATE products SET name=?,tier=?,sort_order=?,img=?,description=? WHERE id=?`).bind(p.name,p.tier,p.sort,p.img,p.desc,p.id).run()}
+  await db.prepare(`UPDATE requests SET cycle_month=substr(created_at,1,7) WHERE cycle_month IS NULL OR cycle_month=''`).run();await db.prepare(`UPDATE requests SET affects_stock=1 WHERE affects_stock IS NULL`).run();const mk=monthKey();await db.prepare(`UPDATE products SET inventory_month=? WHERE inventory_month IS NULL OR inventory_month<>?`).bind(mk,mk).run()
 }
-async function reconcileInventory(db){
-  const current=monthKey();
-  const q=await db.prepare(`SELECT id,total_stock FROM products ORDER BY sort_order`).all();
-  for(const p of(q.results||[])){
-    const c=await db.prepare(`SELECT
-      SUM(CASE WHEN status='En revisión' AND COALESCE(affects_stock,1)=1 THEN 1 ELSE 0 END) AS reserved,
-      SUM(CASE WHEN status='Aprobado' AND COALESCE(affects_stock,1)=1 THEN 1 ELSE 0 END) AS approved,
-      SUM(CASE WHEN status='Entregado' AND COALESCE(affects_stock,1)=1 THEN 1 ELSE 0 END) AS delivered
-      FROM requests WHERE product_id=? AND cycle_month=?`).bind(p.id,current).first();
-    const reserved=Number(c?.reserved||0),approved=Number(c?.approved||0),delivered=Number(c?.delivered||0),committed=reserved+approved+delivered,available=Math.max(0,Number(p.total_stock)-committed);
-    await db.prepare(`UPDATE products SET available=?,reserved=?,approved=?,delivered=?,inventory_month=? WHERE id=?`).bind(available,reserved,approved,delivered,current,p.id).run();
-  }
-}
+async function reconcileInventory(db){const current=monthKey(),q=await db.prepare(`SELECT id,total_stock FROM products ORDER BY sort_order`).all();for(const p of(q.results||[])){const c=await db.prepare(`SELECT SUM(CASE WHEN status='En revisión' AND COALESCE(affects_stock,1)=1 THEN 1 ELSE 0 END) AS reserved,SUM(CASE WHEN status='Aprobado' AND COALESCE(affects_stock,1)=1 THEN 1 ELSE 0 END) AS approved,SUM(CASE WHEN status='Entregado' AND COALESCE(affects_stock,1)=1 THEN 1 ELSE 0 END) AS delivered FROM requests WHERE product_id=? AND cycle_month=?`).bind(p.id,current).first();const reserved=Number(c?.reserved||0),approved=Number(c?.approved||0),delivered=Number(c?.delivered||0),committed=reserved+approved+delivered,available=Math.max(0,Number(p.total_stock)-committed);await db.prepare(`UPDATE products SET available=?,reserved=?,approved=?,delivered=?,inventory_month=? WHERE id=?`).bind(available,reserved,approved,delivered,current,p.id).run()}}
 function b64url(bytes){let s='';for(const b of bytes)s+=String.fromCharCode(b);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
 function fromB64url(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const raw=atob(s);return Uint8Array.from(raw,c=>c.charCodeAt(0))}
 async function keyFor(secret){return crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign','verify'])}
@@ -60,79 +30,18 @@ function tokenFrom(req){const auth=req.headers.get('authorization')||'';if(/^Bea
 async function isAdmin(req,env){try{const secret=env.SESSION_SECRET||env.ADMIN_PASSWORD;if(!secret)return false;const token=tokenFrom(req);if(!token)return false;const [payload,sig]=token.split('.');if(!payload||!sig)return false;const ok=await crypto.subtle.verify('HMAC',await keyFor(secret),fromB64url(sig),new TextEncoder().encode(payload));if(!ok)return false;const obj=JSON.parse(new TextDecoder().decode(fromB64url(payload)));return Number(obj.exp)>Date.now()}catch{return false}}
 async function catalog(db){await reconcileInventory(db);const {results}=await db.prepare(`SELECT id,name,tier,quota,total_stock,available,reserved,approved,delivered,sort_order,img,description,inventory_month FROM products ORDER BY sort_order`).all();return (results||[]).map(p=>({...p,stock:p.total_stock,desc:p.description}))}
 async function createRedeem(req,db){
-  const body=await req.json().catch(()=>null);if(!body)return json({error:'Datos inválidos.'},400);
-  const executive=clean(body.executive),channel=clean(body.channel),productId=clean(body.productId),comment=clean(body.comment),clients=Array.isArray(body.clients)?body.clients:[];
-  if(!executive||!channel||!productId||!clients.length)return json({error:'Completa los datos requeridos.'},400);
-  if(!ALLOWED_CHANNELS.includes(channel))return json({error:'Canal no permitido. Usa Inside Sales, Hunter o Regiones.'},400);
-  if(clients.length>2)return json({error:'Solo se permiten hasta 2 clientes por canje.'},400);
-  let total=0;const lines=[];
-  for(let i=0;i<clients.length;i++){
-    const c=clients[i]||{},ruc=clean(c.ruc),company=clean(c.company),models=Array.isArray(c.models)?c.models:[];
-    if(!/^\d{11}$/.test(ruc)||!company||!models.length)return json({error:`Revisa RUC, razón social y modelos del cliente ${i+1}.`},400);
-    for(const m of models){const model=clean(m.model),qty=Number(m.qty);if(!ALLOWED_MODELS.includes(model))return json({error:`Modelo HONOR no permitido en el cliente ${i+1}.`},400);if(!Number.isInteger(qty)||qty<=0)return json({error:`Revisa las cantidades del cliente ${i+1}.`},400);total+=qty;lines.push({ruc,company,model,qty})}
-  }
-  await reconcileInventory(db);
-  const product=await db.prepare(`SELECT * FROM products WHERE id=?`).bind(productId).first();if(!product)return json({error:'Premio no encontrado.'},404);
-  if(total<Number(product.quota))return json({error:`Faltan ${Number(product.quota)-total} unidades para alcanzar la cuota.`},400);
-  if(Number(product.available)<=0)return json({error:'Este premio ya no tiene stock disponible.'},409);
+  const body=await req.json().catch(()=>null);if(!body)return json({error:'Datos inválidos.'},400);const executive=clean(body.executive),channel=clean(body.channel),productId=clean(body.productId),comment=clean(body.comment),clients=Array.isArray(body.clients)?body.clients:[];
+  if(!executive||!channel||!productId||!clients.length)return json({error:'Completa los datos requeridos.'},400);if(!ALLOWED_CHANNELS.includes(channel))return json({error:'Canal no permitido. Usa Inside Sales, Hunter o Regiones.'},400);if(clients.length>2)return json({error:'Solo se permiten hasta 2 clientes por canje.'},400);
+  let total=0;const lines=[];for(let i=0;i<clients.length;i++){const c=clients[i]||{},ruc=clean(c.ruc),company=clean(c.company),models=Array.isArray(c.models)?c.models:[];if(!/^\d{11}$/.test(ruc)||!company||!models.length)return json({error:`Revisa RUC, razón social y modelos del cliente ${i+1}.`},400);for(const m of models){const model=clean(m.model),qty=Number(m.qty);if(!ALLOWED_MODELS.includes(model))return json({error:`Modelo HONOR no permitido en el cliente ${i+1}.`},400);if(!Number.isInteger(qty)||qty<=0)return json({error:`Revisa las cantidades del cliente ${i+1}.`},400);total+=qty;lines.push({ruc,company,model,qty})}}
+  await reconcileInventory(db);const product=await db.prepare(`SELECT * FROM products WHERE id=?`).bind(productId).first();if(!product)return json({error:'Premio no encontrado.'},404);if(total<Number(product.quota))return json({error:`Faltan ${Number(product.quota)-total} unidades para alcanzar la cuota.`},400);
+  const hold=await db.prepare(`UPDATE products SET available=available-1,reserved=reserved+1 WHERE id=? AND available>0`).bind(productId).run();if(!hold?.meta?.changes)return json({error:'Este premio ya no tiene stock disponible.'},409);
   const id=crypto.randomUUID(),now=new Date().toISOString(),cycle=monthKey();
-  await db.prepare(`INSERT INTO requests(id,created_at,executive,channel,product_id,total_qty,comment,status,admin_note,cycle_month,affects_stock) VALUES(?,?,?,?,?,?,?,?,?,?,1)`).bind(id,now,executive,channel,productId,total,comment,'En revisión','',cycle).run();
-  try{for(const l of lines)await db.prepare(`INSERT INTO request_lines(request_id,ruc,company,model,qty) VALUES(?,?,?,?,?)`).bind(id,l.ruc,l.company,l.model,l.qty).run()}catch(e){await db.prepare(`DELETE FROM request_lines WHERE request_id=?`).bind(id).run();await db.prepare(`DELETE FROM requests WHERE id=?`).bind(id).run();throw e}
-  await reconcileInventory(db);
-  return json({ok:true,id,status:'En revisión',message:'Solicitud registrada. La información será revisada y, si es correcta, la entrega se realizará en un plazo máximo de 3 días hábiles.'},201);
+  try{await db.prepare(`INSERT INTO requests(id,created_at,executive,channel,product_id,total_qty,comment,status,admin_note,cycle_month,affects_stock) VALUES(?,?,?,?,?,?,?,?,?,?,1)`).bind(id,now,executive,channel,productId,total,comment,'En revisión','',cycle).run();for(const l of lines)await db.prepare(`INSERT INTO request_lines(request_id,ruc,company,model,qty) VALUES(?,?,?,?,?)`).bind(id,l.ruc,l.company,l.model,l.qty).run()}catch(e){await db.prepare(`DELETE FROM request_lines WHERE request_id=?`).bind(id).run().catch(()=>{});await db.prepare(`DELETE FROM requests WHERE id=?`).bind(id).run().catch(()=>{});await reconcileInventory(db);throw e}
+  await reconcileInventory(db);return json({ok:true,id,status:'En revisión',message:'Solicitud registrada. La información será revisada y, si es correcta, la entrega se realizará en un plazo máximo de 3 días hábiles.'},201)
 }
-async function adminRequests(db,requestedMonth){
-  const current=monthKey(),month=requestedMonth==='all'?'all':(requestedMonth||current);
-  const stmt=month==='all'?db.prepare(`SELECT r.*,p.name AS product_name,p.quota FROM requests r JOIN products p ON p.id=r.product_id ORDER BY r.created_at DESC`):db.prepare(`SELECT r.*,p.name AS product_name,p.quota FROM requests r JOIN products p ON p.id=r.product_id WHERE r.cycle_month=? ORDER BY r.created_at DESC`).bind(month);
-  const {results}=await stmt.all();
-  for(const r of(results||[])){const q=await db.prepare(`SELECT ruc,company,model,qty FROM request_lines WHERE request_id=? ORDER BY id`).bind(r.id).all();r.lines=q.results||[]}
-  const mq=await db.prepare(`SELECT DISTINCT cycle_month FROM requests WHERE cycle_month IS NOT NULL AND cycle_month<>'' ORDER BY cycle_month DESC`).all();
-  return {requests:results||[],months:(mq.results||[]).map(x=>x.cycle_month),currentMonth:current,selectedMonth:month};
-}
-async function updateStatus(req,db){
-  const b=await req.json().catch(()=>null);if(!b)return json({error:'Datos inválidos.'},400);const id=clean(b.id),next=clean(b.status),note=clean(b.note);if(!['Aprobado','Rechazado','Entregado'].includes(next))return json({error:'Estado inválido.'},400);
-  const r=await db.prepare(`SELECT * FROM requests WHERE id=?`).bind(id).first();if(!r)return json({error:'Solicitud no encontrada.'},404);const old=r.status;
-  if(old===next){await db.prepare(`UPDATE requests SET admin_note=? WHERE id=?`).bind(note,id).run();return json({ok:true,status:next})}
-  const allowed=(old==='En revisión'&&['Aprobado','Rechazado','Entregado'].includes(next))||(old==='Aprobado'&&['Rechazado','Entregado'].includes(next));if(!allowed)return json({error:'Cambio de estado no permitido.'},400);
-  await db.prepare(`UPDATE requests SET status=?,admin_note=? WHERE id=?`).bind(next,note,id).run();await reconcileInventory(db);return json({ok:true,status:next});
-}
-async function deleteRequest(req,db){
-  const b=await req.json().catch(()=>null),id=clean(b?.id);if(!id)return json({error:'Solicitud inválida.'},400);const r=await db.prepare(`SELECT * FROM requests WHERE id=?`).bind(id).first();if(!r)return json({error:'Solicitud no encontrada.'},404);
-  await db.prepare(`DELETE FROM request_lines WHERE request_id=?`).bind(id).run();await db.prepare(`DELETE FROM requests WHERE id=?`).bind(id).run();await reconcileInventory(db);return json({ok:true});
-}
-async function updateProduct(req,db){
-  const b=await req.json().catch(()=>null);if(!b)return json({error:'Datos inválidos.'},400);const id=clean(b.id),quota=Number(b.quota),total=Number(b.total_stock);if(!id||!Number.isInteger(quota)||quota<1||!Number.isInteger(total)||total<0)return json({error:'Valores inválidos.'},400);
-  await reconcileInventory(db);const p=await db.prepare(`SELECT * FROM products WHERE id=?`).bind(id).first();if(!p)return json({error:'Premio no encontrado.'},404);const committed=Number(p.reserved)+Number(p.approved)+Number(p.delivered);if(total<committed)return json({error:`El stock mensual no puede ser menor a ${committed} porque ya existen premios comprometidos.`},400);await db.prepare(`UPDATE products SET quota=?,total_stock=?,inventory_month=? WHERE id=?`).bind(quota,total,monthKey(),id).run();await reconcileInventory(db);return json({ok:true});
-}
-async function resetCurrentMonth(db){
-  const current=monthKey();
-  await db.prepare(`UPDATE requests SET affects_stock=0 WHERE cycle_month=? AND COALESCE(affects_stock,1)=1`).bind(current).run();
-  await db.prepare(`UPDATE products SET inventory_month=?`).bind(current).run();
-  await reconcileInventory(db);
-  return json({ok:true,currentMonth:current,message:'Stock mensual restablecido. Las cuotas y el histórico se conservaron.'});
-}
-export async function onRequest(context){
-  const {request,env}=context,url=new URL(request.url),path=url.pathname.replace(/\/+$/,'')||'/';
-  if(path==='/api/health'&&request.method==='GET')return json({ok:true,databaseConfigured:!!env.DB,adminPasswordConfigured:!!env.ADMIN_PASSWORD,sessionSecretConfigured:!!env.SESSION_SECRET});
-  if(!env.DB)return json({error:'Base de datos aún no vinculada.'},503);
-  try{await initDB(env.DB)}catch(e){return json({error:'No se pudo inicializar la base de datos.',detail:String(e?.message||e)},500)}
-  try{
-    if(path==='/api/catalog'&&request.method==='GET')return json({products:await catalog(env.DB),currentMonth:monthKey()});
-    if(path==='/api/redeem'&&request.method==='POST')return createRedeem(request,env.DB);
-    if(path==='/api/admin/login'&&request.method==='POST'){
-      if(!env.ADMIN_PASSWORD)return json({error:'ADMIN_PASSWORD aún no configurada en Cloudflare.'},503);const b=await request.json().catch(()=>({}));if(String(b.password||'')!==String(env.ADMIN_PASSWORD))return json({error:'Contraseña incorrecta.'},401);const token=await makeSession(env);return json({ok:true,token},200,{'set-cookie':`hr_admin=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=28800`});
-    }
-    if(path==='/api/admin/logout'&&request.method==='POST')return json({ok:true},200,{'set-cookie':'hr_admin=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0'});
-    if(path.startsWith('/api/admin/')){
-      if(!(await isAdmin(request,env)))return json({error:'No autorizado.'},401);
-      if(path==='/api/admin/me'&&request.method==='GET')return json({ok:true});
-      if(path==='/api/admin/requests'&&request.method==='GET')return json(await adminRequests(env.DB,url.searchParams.get('month')));
-      if(path==='/api/admin/products'&&request.method==='GET')return json({products:await catalog(env.DB),currentMonth:monthKey()});
-      if(path==='/api/admin/status'&&request.method==='POST')return updateStatus(request,env.DB);
-      if(path==='/api/admin/delete'&&request.method==='POST')return deleteRequest(request,env.DB);
-      if(path==='/api/admin/product'&&request.method==='POST')return updateProduct(request,env.DB);
-      if(path==='/api/admin/reset-month'&&request.method==='POST')return resetCurrentMonth(env.DB);
-    }
-    return json({error:'Ruta no encontrada.'},404);
-  }catch(e){return json({error:'Error interno.',detail:String(e?.message||e)},500)}
-}
+async function adminRequests(db,requestedMonth){const current=monthKey(),month=requestedMonth==='all'?'all':(requestedMonth||current),stmt=month==='all'?db.prepare(`SELECT r.*,p.name AS product_name,p.quota FROM requests r JOIN products p ON p.id=r.product_id ORDER BY r.created_at DESC`):db.prepare(`SELECT r.*,p.name AS product_name,p.quota FROM requests r JOIN products p ON p.id=r.product_id WHERE r.cycle_month=? ORDER BY r.created_at DESC`).bind(month);const {results}=await stmt.all();for(const r of(results||[])){const q=await db.prepare(`SELECT ruc,company,model,qty FROM request_lines WHERE request_id=? ORDER BY id`).bind(r.id).all();r.lines=q.results||[]}const mq=await db.prepare(`SELECT DISTINCT cycle_month FROM requests WHERE cycle_month IS NOT NULL AND cycle_month<>'' ORDER BY cycle_month DESC`).all();return {requests:results||[],months:(mq.results||[]).map(x=>x.cycle_month),currentMonth:current,selectedMonth:month}}
+async function updateStatus(req,db){const b=await req.json().catch(()=>null);if(!b)return json({error:'Datos inválidos.'},400);const id=clean(b.id),next=clean(b.status),note=clean(b.note);if(!['Aprobado','Rechazado','Entregado'].includes(next))return json({error:'Estado inválido.'},400);const r=await db.prepare(`SELECT * FROM requests WHERE id=?`).bind(id).first();if(!r)return json({error:'Solicitud no encontrada.'},404);const old=r.status;if(old===next){await db.prepare(`UPDATE requests SET admin_note=? WHERE id=?`).bind(note,id).run();return json({ok:true,status:next})}const allowed=(old==='En revisión'&&['Aprobado','Rechazado','Entregado'].includes(next))||(old==='Aprobado'&&['Rechazado','Entregado'].includes(next));if(!allowed)return json({error:'Cambio de estado no permitido.'},400);await db.prepare(`UPDATE requests SET status=?,admin_note=? WHERE id=?`).bind(next,note,id).run();await reconcileInventory(db);return json({ok:true,status:next})}
+async function deleteRequest(req,db){const b=await req.json().catch(()=>null),id=clean(b?.id);if(!id)return json({error:'Solicitud inválida.'},400);const r=await db.prepare(`SELECT * FROM requests WHERE id=?`).bind(id).first();if(!r)return json({error:'Solicitud no encontrada.'},404);await db.prepare(`DELETE FROM request_lines WHERE request_id=?`).bind(id).run();await db.prepare(`DELETE FROM requests WHERE id=?`).bind(id).run();await reconcileInventory(db);return json({ok:true})}
+async function updateProduct(req,db){const b=await req.json().catch(()=>null);if(!b)return json({error:'Datos inválidos.'},400);const id=clean(b.id),quota=Number(b.quota),total=Number(b.total_stock);if(!id||!Number.isInteger(quota)||quota<1||!Number.isInteger(total)||total<0)return json({error:'Valores inválidos.'},400);await reconcileInventory(db);const p=await db.prepare(`SELECT * FROM products WHERE id=?`).bind(id).first();if(!p)return json({error:'Premio no encontrado.'},404);const committed=Number(p.reserved)+Number(p.approved)+Number(p.delivered);if(total<committed)return json({error:`El stock mensual no puede ser menor a ${committed} porque ya existen premios comprometidos.`},400);await db.prepare(`UPDATE products SET quota=?,total_stock=?,inventory_month=? WHERE id=?`).bind(quota,total,monthKey(),id).run();await reconcileInventory(db);return json({ok:true})}
+async function resetCurrentMonth(db){const current=monthKey();await db.prepare(`UPDATE requests SET affects_stock=0 WHERE cycle_month=? AND COALESCE(affects_stock,1)=1`).bind(current).run();await db.prepare(`UPDATE products SET inventory_month=?`).bind(current).run();await reconcileInventory(db);return json({ok:true,currentMonth:current,message:'Stock mensual restablecido. Las cuotas y el histórico se conservaron.'})}
+export async function onRequest(context){const {request,env}=context,url=new URL(request.url),path=url.pathname.replace(/\/+$/,'')||'/';if(path==='/api/health'&&request.method==='GET')return json({ok:true,databaseConfigured:!!env.DB,adminPasswordConfigured:!!env.ADMIN_PASSWORD,sessionSecretConfigured:!!env.SESSION_SECRET});if(!env.DB)return json({error:'Base de datos aún no vinculada.'},503);try{await initDB(env.DB)}catch(e){return json({error:'No se pudo inicializar la base de datos.',detail:String(e?.message||e)},500)}try{if(path==='/api/catalog'&&request.method==='GET')return json({products:await catalog(env.DB),currentMonth:monthKey()});if(path==='/api/redeem'&&request.method==='POST')return createRedeem(request,env.DB);if(path==='/api/admin/login'&&request.method==='POST'){if(!env.ADMIN_PASSWORD)return json({error:'ADMIN_PASSWORD aún no configurada en Cloudflare.'},503);const b=await request.json().catch(()=>({}));if(String(b.password||'')!==String(env.ADMIN_PASSWORD))return json({error:'Contraseña incorrecta.'},401);const token=await makeSession(env);return json({ok:true,token},200,{'set-cookie':`hr_admin=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=28800`})}if(path==='/api/admin/logout'&&request.method==='POST')return json({ok:true},200,{'set-cookie':'hr_admin=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0'});if(path.startsWith('/api/admin/')){if(!(await isAdmin(request,env)))return json({error:'No autorizado.'},401);if(path==='/api/admin/me'&&request.method==='GET')return json({ok:true});if(path==='/api/admin/requests'&&request.method==='GET')return json(await adminRequests(env.DB,url.searchParams.get('month')));if(path==='/api/admin/products'&&request.method==='GET')return json({products:await catalog(env.DB),currentMonth:monthKey()});if(path==='/api/admin/status'&&request.method==='POST')return updateStatus(request,env.DB);if(path==='/api/admin/delete'&&request.method==='POST')return deleteRequest(request,env.DB);if(path==='/api/admin/product'&&request.method==='POST')return updateProduct(request,env.DB);if(path==='/api/admin/reset-month'&&request.method==='POST')return resetCurrentMonth(env.DB)}return json({error:'Ruta no encontrada.'},404)}catch(e){return json({error:'Error interno.',detail:String(e?.message||e)},500)}}
